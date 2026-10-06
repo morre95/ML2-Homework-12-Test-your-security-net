@@ -165,12 +165,15 @@ def run_case(case, hooks, project):
 
 def call_preview(case):
     data = case.get("input", {})
+    tool_input = data.get("tool_input")
     if "raw_stdin" in case:
         text = f"stdin: {case['raw_stdin']}"
+    elif "mcp_server_name" in data:
+        text = f"{data['mcp_server_name']} {data.get('tool_name', '')} {tool_input or ''}"
     elif "command" in data:
         text = data["command"]
-    elif "tool_name" in data:
-        text = f"{data.get('mcp_server_name', '')} {data['tool_name']} {data.get('tool_input', '')}"
+    elif isinstance(tool_input, dict):
+        text = f"{data.get('tool_name', '')} {tool_input.get('path', '')}"
     else:
         text = data.get("file_path", "")
     text = text.replace("{project}/", "").replace("{home}", "~")
