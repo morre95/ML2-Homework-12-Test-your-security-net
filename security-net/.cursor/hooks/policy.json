@@ -116,6 +116,10 @@
         "reason": "Deleting Kubernetes namespaces is blocked."
       },
       {
+        "id": "git-alias-override",
+        "reason": "git -c alias.* and git config alias.* can hide the real subcommand."
+      },
+      {
         "id": "tamper-security-net",
         "reason": "Modifying the security-net hooks, MCP config, or git hook path is blocked."
       }

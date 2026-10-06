@@ -350,6 +350,26 @@ def parse_git(tokens: list[str]) -> tuple[str | None, list[str]]:
     return tokens[i], tokens[i + 1 :]
 
 
+def git_config_overrides(tokens: list[str]) -> list[str]:
+    """Values of `-c key=value` given before the git subcommand."""
+    values: list[str] = []
+    i = 1
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok == "-c" and i + 1 < len(tokens):
+            values.append(tokens[i + 1])
+            i += 2
+            continue
+        if tok.startswith("-c") and len(tok) > 2:
+            values.append(tok[2:])
+        elif tok in GIT_GLOBAL_FLAGS_WITH_ARG:
+            i += 1
+        elif not tok.startswith("-"):
+            break
+        i += 1
+    return values
+
+
 def normalize_ref(ref: str) -> str:
     name = ref.lstrip("+")
     for prefix in ("refs/heads/", "refs/tags/", "refs/remotes/origin/", "origin/"):
@@ -394,6 +414,8 @@ def parse_push(args: list[str]) -> tuple[bool, bool, bool, list[str]]:
     dests: list[str] = []
     refspecs = positionals[1:] if positionals else []
     for spec in refspecs:
+        if spec.startswith("+"):
+            force = True
         raw = spec.lstrip("+")
         if ":" in raw:
             src, dst = raw.split(":", 1)
@@ -531,6 +553,16 @@ def classify_rm(
 
 
 def classify_git(tokens: list[str], cwd: str | None, policy: dict[str, Any]) -> Decision:
+    for value in git_config_overrides(tokens):
+        key = value.split("=", 1)[0].lower()
+        if key == "core.hookspath":
+            return deny("tamper-security-net", "Changing git core.hooksPath is blocked.")
+        if key.startswith("alias."):
+            return deny(
+                "git-alias-override",
+                "git -c alias.* can hide the real subcommand and is blocked.",
+            )
+
     sub, args = parse_git(tokens)
     if not sub:
         return ALLOW
@@ -578,6 +610,12 @@ def classify_git(tokens: list[str], cwd: str | None, policy: dict[str, Any]) -> 
             return deny(
                 "tamper-security-net",
                 "Changing git core.hooksPath is blocked.",
+            )
+        positionals = [a for a in args if not a.startswith("-")]
+        if len(positionals) >= 2 and positionals[0].lower().startswith("alias."):
+            return deny(
+                "git-alias-override",
+                "Defining git aliases can hide the real subcommand and is blocked.",
             )
 
     if sub == "rebase":
@@ -943,12 +981,6 @@ def classify_segment(
                         "Modifying security-net files is blocked.",
                     )
                     break
-        joined_inner = " ".join(inner)
-        if re.search(r"core\.hooksPath", joined_inner):
-            decision = deny(
-                "tamper-security-net",
-                "Changing git core.hooksPath is blocked.",
-            )
 
     if used_priv and cmd not in PRIVILEGE:
         decision = stricter(
