@@ -46,12 +46,12 @@ def substitute(value, project):
 def matcher_target(event, payload):
     """The value Cursor tests a hook's matcher against, per event."""
     if event in {"beforeShellExecution", "afterShellExecution"}:
-        return payload.get("command") or ""
+        return str(payload.get("command") or "")
     if event == "beforeReadFile":
         return "Read"
     if event == "afterFileEdit":
         return "Write"
-    return payload.get("tool_name") or ""
+    return str(payload.get("tool_name") or "")
 
 
 def matches(hook, target):
@@ -176,7 +176,7 @@ def call_preview(case):
         text = f"{data.get('tool_name', '')} {tool_input.get('path', '')}"
     else:
         text = data.get("file_path", "")
-    text = text.replace("{project}/", "").replace("{home}", "~")
+    text = str(text).replace("{project}/", "").replace("{home}", "~")
     flat = " ".join(str(text).split())
     flat = flat[:PREVIEW_CHARS] + ("…" if len(flat) > PREVIEW_CHARS else "")
     return flat.replace("|", "\\|")

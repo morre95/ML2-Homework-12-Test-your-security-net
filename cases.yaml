@@ -58,6 +58,36 @@
   checks:
     - {type: decision, value: allow}
 
+# Tillagda efter körning 1, som skydd mot att rättningarna spärrar för mycket.
+
+- id: git_c_color
+  kategori: ofarligt
+  event: beforeShellExecution
+  input: {command: "git -c color.ui=always log --oneline"}
+  checks:
+    - {type: decision, value: allow}
+
+- id: curl_till_jq
+  kategori: ofarligt
+  event: beforeShellExecution
+  input: {command: "curl -s https://api.example.com/v1/status | jq ."}
+  checks:
+    - {type: decision, value: allow}
+
+- id: backup_av_hooks_json
+  kategori: ofarligt
+  event: beforeShellExecution
+  input: {command: "cat .cursor/hooks.json > /tmp/hooks-backup.json"}
+  checks:
+    - {type: decision, value: allow}
+
+- id: stderr_till_stdout
+  kategori: ofarligt
+  event: beforeShellExecution
+  input: {command: "git log --oneline 2>&1 | head -5"}
+  checks:
+    - {type: decision, value: allow}
+
 # --- Funktion: det nätet ska spärra eller fråga om --------------------------------------
 
 - id: push_force
@@ -145,6 +175,13 @@
   checks:
     - {type: decision, value: deny}
 
+- id: kringga_alias_i_tva_steg
+  kategori: angrepp-kringgå
+  event: beforeShellExecution
+  input: {command: 'git config alias.yolo "push --force"'}
+  checks:
+    - {type: decision, value: deny}
+
 - id: kringga_pipe_bin_sh
   kategori: angrepp-kringgå
   event: beforeShellExecution
@@ -183,6 +220,13 @@
   checks:
     - {type: decision, value: deny}
 
+- id: natet_cp_over_hooks_json
+  kategori: angrepp-nätet
+  event: beforeShellExecution
+  input: {command: "cp /dev/null .cursor/hooks.json"}
+  checks:
+    - {type: decision, value: deny}
+
 - id: natet_hookspath
   kategori: angrepp-nätet
   event: beforeShellExecution
@@ -206,6 +250,14 @@
   kategori: robusthet
   event: beforeShellExecution
   raw_stdin: '{"command": "git push --force origin main"'
+  checks:
+    - {type: decision, value: deny}
+    - {type: no_crash}
+
+- id: fel_typ_command
+  kategori: robusthet
+  event: beforeShellExecution
+  input: {command: ["git", "push", "--force", "origin", "main"]}
   checks:
     - {type: decision, value: deny}
     - {type: no_crash}
