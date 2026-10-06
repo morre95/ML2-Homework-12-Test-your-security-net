@@ -9,11 +9,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _classify import classify_command, decision_to_payload  # noqa: E402
-from _policy import audit, emit, load_policy, read_stdin_json  # noqa: E402
+from _policy import audit, deny_invalid_input, emit, load_policy, read_stdin_json  # noqa: E402
 
 
 def main() -> int:
     data = read_stdin_json()
+    if data is None or not isinstance(data.get("command", ""), str):
+        return deny_invalid_input("beforeShellExecution")
     command = data.get("command") or ""
     cwd = data.get("cwd") or None
     workspace_roots = data.get("workspace_roots") or []

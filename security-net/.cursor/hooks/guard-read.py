@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _policy import (  # noqa: E402
     audit,
+    deny_invalid_input,
     emit,
     is_secret_path,
     load_policy,
@@ -45,6 +46,8 @@ def extract_paths(data: dict[str, Any]) -> list[str]:
 
 def main() -> int:
     data = read_stdin_json()
+    if data is None:
+        return deny_invalid_input("beforeReadFile")
     cwd = data.get("cwd")
     try:
         policy = load_policy()

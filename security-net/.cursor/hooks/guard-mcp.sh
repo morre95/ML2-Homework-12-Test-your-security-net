@@ -8,6 +8,13 @@ export PATH="${HOME}/.local/bin:/usr/bin:/bin:${PATH}"
 
 input=$(cat)
 
+if ! echo "$input" | jq -e 'type == "object"' >/dev/null 2>&1; then
+    jq -n '{permission:"deny",
+        user_message:"The security net got invalid JSON on stdin and failed closed.",
+        agent_message:"Blocked by the security net: the hook input was not a JSON object."}'
+    exit 0
+fi
+
 server=$(echo "$input" | jq -r '.mcp_server_name // empty')
 if [ "$server" != "git-gate" ]; then
     echo '{"permission":"allow"}'

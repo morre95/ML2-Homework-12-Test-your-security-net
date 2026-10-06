@@ -31,20 +31,31 @@ def load_policy() -> dict[str, Any]:
         return json.load(fh)
 
 
-def read_stdin_json() -> dict[str, Any]:
+def read_stdin_json() -> dict[str, Any] | None:
+    """Return the hook payload, or None if stdin is not a JSON object."""
     raw = sys.stdin.read()
-    if not raw.strip():
-        return {}
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
-        return {}
-    return data if isinstance(data, dict) else {}
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def emit(payload: dict[str, Any]) -> None:
     sys.stdout.write(json.dumps(payload, ensure_ascii=False))
     sys.stdout.flush()
+
+
+def deny_invalid_input(event: str) -> int:
+    audit(event, permission="deny", reason="invalid JSON on stdin")
+    emit(
+        {
+            "permission": "deny",
+            "user_message": "The security net got invalid JSON on stdin and failed closed.",
+            "agent_message": "Blocked by the security net: the hook input was not a JSON object.",
+        }
+    )
+    return 0
 
 
 def audit(event: str, **fields: Any) -> None:

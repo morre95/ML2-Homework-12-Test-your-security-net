@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _policy import (  # noqa: E402
     audit,
+    deny_invalid_input,
     emit,
     is_protected_path,
     is_secret_path,
@@ -36,6 +37,8 @@ def extract_paths(tool_input: Any) -> list[str]:
 
 def main() -> int:
     data = read_stdin_json()
+    if data is None:
+        return deny_invalid_input("preToolUse")
     tool = data.get("tool_name") or ""
     cwd = data.get("cwd")
     tool_input = data.get("tool_input") or {}
