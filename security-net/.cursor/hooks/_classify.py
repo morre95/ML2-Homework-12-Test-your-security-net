@@ -112,12 +112,17 @@ PUBLISH_COMMANDS = {
     ("cargo", "publish"),
 }
 
+# `| sh`, `| /bin/sh`, `| sudo -E bash`, `| env zsh`, ...
+SHELL_SINK = (
+    r"\|\s*(?:(?:sudo|doas|env|command|exec)\s+(?:-\S+\s+)*)*"
+    r"(?:\S*/)?(?:ba|z|k|da|fi)?sh\b"
+)
 PIPE_TO_SHELL_RE = re.compile(
-    r"(curl|wget|fetch|httpie|http)\b[^|;\n]*\|\s*(?:sudo\s+)?(?:ba)?sh\b",
+    r"(curl|wget|fetch|httpie|http)\b[^|;\n]*" + SHELL_SINK,
     re.IGNORECASE,
 )
 BASE64_TO_SHELL_RE = re.compile(
-    r"base64\b[^|;\n]*-d[^|;\n]*\|\s*(?:sudo\s+)?(?:ba)?sh\b",
+    r"base64\b[^|;\n]*-d[^|;\n]*" + SHELL_SINK,
     re.IGNORECASE,
 )
 REDIRECT_DEVICE_RE = re.compile(r"(?:>>?|tee(?:\s+-a)?)\s+/dev/sd[a-z]\d*", re.IGNORECASE)
