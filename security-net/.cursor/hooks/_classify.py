@@ -126,6 +126,14 @@ BASE64_TO_SHELL_RE = re.compile(
     re.IGNORECASE,
 )
 REDIRECT_DEVICE_RE = re.compile(r"(?:>>?|tee(?:\s+-a)?)\s+/dev/sd[a-z]\d*", re.IGNORECASE)
+# `> file`, `>> file`, `2> file`, `&> file`, `x>file`; not `2>&1`
+REDIRECT_TARGET_RE = re.compile(r"(?:^|[^<>&])(?:\d|&)?>>?\|?\s*([^\s;&|<>]+)")
+
+TAMPER_COMMANDS = {
+    "rm", "mv", "sed", "chmod", "chown", "tee", "truncate", "unlink", "ln", "cp", "install",
+}
+# commands whose source operands are only read, so only the destination counts
+COPY_COMMANDS = {"cp", "install"}
 
 HISTORY_SAFE_FLAGS = {"--abort", "--continue", "--skip", "--quit"}
 
@@ -900,6 +908,17 @@ def classify_full_string(command: str) -> Decision:
     return ALLOW
 
 
+def classify_redirects(segment: str, cwd: str | None, policy: dict[str, Any]) -> Decision:
+    for match in REDIRECT_TARGET_RE.finditer(segment):
+        target = match.group(1).strip("'\"")
+        if is_protected_path(target, policy, cwd):
+            return deny(
+                "tamper-security-net",
+                "Redirecting output onto security-net files is blocked.",
+            )
+    return ALLOW
+
+
 def classify_segment(
     tokens: list[str],
     cwd: str | None,
@@ -974,18 +993,16 @@ def classify_segment(
         if decision.permission == "allow":
             decision = classify_publish(cmd, inner, policy)
 
-    # tamper with security net via rm/mv/sed/chmod/tee on protected paths
-    if decision.permission != "deny" or decision.rule_id != "tamper-security-net":
-        if cmd in {"rm", "mv", "sed", "chmod", "chown", "tee", "truncate", "unlink", "ln"}:
-            for tok in inner[1:]:
-                if tok.startswith("-"):
-                    continue
-                if is_protected_path(tok, policy, cwd):
-                    decision = deny(
-                        "tamper-security-net",
-                        "Modifying security-net files is blocked.",
-                    )
-                    break
+    # tamper with security net via rm/mv/sed/chmod/tee/cp on protected paths
+    if cmd in TAMPER_COMMANDS:
+        operands = [tok for tok in inner[1:] if not tok.startswith("-")]
+        if cmd in COPY_COMMANDS:
+            operands = operands[-1:]
+        if any(is_protected_path(tok, policy, cwd) for tok in operands):
+            decision = deny(
+                "tamper-security-net",
+                "Modifying security-net files is blocked.",
+            )
 
     if used_priv and cmd not in PRIVILEGE:
         decision = stricter(
@@ -1012,7 +1029,7 @@ def classify_command(
     for segment in segments:
         tokens = tokenize(segment)
         best = stricter(best, classify_segment(tokens, cwd, policy, roots))
-        # also classify without splitting quotes-stripped inner of bash -c already handled
+        best = stricter(best, classify_redirects(segment, cwd, policy))
     return best
 
 

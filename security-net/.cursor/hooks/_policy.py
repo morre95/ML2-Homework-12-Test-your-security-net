@@ -135,10 +135,16 @@ def is_protected_path(path: str, policy: dict[str, Any], cwd: str | None = None)
     lowered = resolved.replace("\\", "/").lower()
     original = raw.replace("\\", "/").lower()
 
+    as_dir = lowered.rstrip("/") + "/"
     for sub in policy.get("protected_path_substrings") or []:
         needle = sub.lower()
-        if needle in lowered or needle in original:
+        if needle in lowered or needle in original or needle in as_dir:
             return True
+        # a parent directory of protected files, e.g. `.cursor` for `.cursor/hooks.json`
+        parts = needle.rstrip("/").split("/")
+        for i in range(1, len(parts)):
+            if as_dir.endswith("/" + "/".join(parts[:i]) + "/"):
+                return True
 
     home = _home().replace("\\", "/")
     for rel in policy.get("protected_user_relpaths") or []:
