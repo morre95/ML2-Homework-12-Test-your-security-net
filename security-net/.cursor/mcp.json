@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "git-gate": {
+      "type": "stdio",
+      "command": "${userHome}/.local/bin/uv",
+      "args": [
+        "run",
+        "--script",
+        "${workspaceFolder}/.cursor/tools/git_gate_mcp.py"
+      ]
+    }
+  }
+}

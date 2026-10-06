@@ -1,0 +1,10 @@
+.cursor/hooks/logs/*.log
+.cursor/hooks/logs/*.json
+.cursor/hooks/__pycache__/
+.cursor/tools/__pycache__/
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.*
+.ruff_cache/

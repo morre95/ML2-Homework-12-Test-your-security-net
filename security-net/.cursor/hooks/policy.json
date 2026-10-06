@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "mcp_server_name": "git-gate",
+  "protected_branches": [
+    "main",
+    "master",
+    "dev",
+    "develop",
+    "production"
+  ],
+  "protected_branch_globs": [
+    "release/*"
+  ],
+  "prod_host_substrings": [
+    "prod",
+    "production"
+  ],
+  "prod_host_globs": [
+    "*.prod.*",
+    "prod.*",
+    "*.prod",
+    "*.production.*",
+    "production.*"
+  ],
+  "protected_path_substrings": [
+    ".cursor/hooks.json",
+    ".cursor/hooks/",
+    ".cursor/mcp.json",
+    ".cursor/tools/",
+    ".cursor/hooks.json"
+  ],
+  "protected_user_relpaths": [
+    ".cursor/hooks.json",
+    ".cursor/hooks/",
+    ".cursor/mcp.json"
+  ],
+  "secret_path_globs": [
+    "**/.env",
+    "**/.env.*",
+    "**/id_rsa",
+    "**/id_ed25519",
+    "**/id_ecdsa",
+    "**/id_dsa",
+    "**/.ssh/id_*",
+    "**/.aws/credentials",
+    "**/credentials.json",
+    "**/*.pem",
+    "**/*.key",
+    "**/secrets.yaml",
+    "**/secrets.yml",
+    "**/.netrc",
+    "**/id_rsa.pub"
+  ],
+  "secret_read_allow_pubkeys": false,
+  "tools": {
+    "push_protected_branch": "push_protected_branch",
+    "run_gated_command": "run_gated_command",
+    "show_policy": "show_policy"
+  },
+  "rules": {
+    "hard_deny": [
+      {
+        "id": "rm-root-or-home",
+        "reason": "Recursive delete of root, home, or a system directory is blocked."
+      },
+      {
+        "id": "mkfs",
+        "reason": "Formatting disks is blocked."
+      },
+      {
+        "id": "dd-device",
+        "reason": "Writing raw devices with dd is blocked."
+      },
+      {
+        "id": "shred",
+        "reason": "shred is blocked."
+      },
+      {
+        "id": "chmod-777-root",
+        "reason": "chmod -R 777 on / is blocked."
+      },
+      {
+        "id": "redirect-block-device",
+        "reason": "Redirects onto block devices are blocked."
+      },
+      {
+        "id": "pipe-to-shell",
+        "reason": "Piping curl/wget/fetch output into a shell is blocked."
+      },
+      {
+        "id": "base64-to-shell",
+        "reason": "Decoding base64 into a shell is blocked."
+      },
+      {
+        "id": "prod-ssh",
+        "reason": "SSH/SCP/RSYNC to production hosts is blocked."
+      },
+      {
+        "id": "shutdown",
+        "reason": "shutdown/reboot/poweroff is blocked."
+      },
+      {
+        "id": "kill-all",
+        "reason": "kill -9 -1 is blocked."
+      },
+      {
+        "id": "gh-repo-delete",
+        "reason": "Deleting GitHub repositories is blocked."
+      },
+      {
+        "id": "terraform-destroy",
+        "reason": "terraform destroy is blocked."
+      },
+      {
+        "id": "kubectl-delete-ns",
+        "reason": "Deleting Kubernetes namespaces is blocked."
+      },
+      {
+        "id": "tamper-security-net",
+        "reason": "Modifying the security-net hooks, MCP config, or git hook path is blocked."
+      }
+    ],
+    "gated": [
+      {
+        "id": "push-protected-branch",
+        "tool": "push_protected_branch",
+        "reason": "Pushing to a protected branch must go through push_protected_branch so the user can approve it."
+      },
+      {
+        "id": "force-or-delete-push",
+        "tool": "run_gated_command",
+        "reason": "Force-push and remote branch deletion must go through run_gated_command."
+      },
+      {
+        "id": "deploy",
+        "tool": "run_gated_command",
+        "reason": "Deploy commands must go through run_gated_command."
+      },
+      {
+        "id": "service-control",
+        "tool": "run_gated_command",
+        "reason": "Stopping, disabling, or restarting services must go through run_gated_command."
+      },
+      {
+        "id": "publish",
+        "tool": "run_gated_command",
+        "reason": "Publishing packages or cutting GitHub releases must go through run_gated_command."
+      }
+    ],
+    "ask": [
+      {
+        "id": "git-history-rewrite",
+        "reason": "This git command rewrites history or discards work. Confirm before continuing."
+      },
+      {
+        "id": "privilege-escalation",
+        "reason": "sudo/su/doas/pkexec requires confirmation."
+      },
+      {
+        "id": "rm-outside-workspace",
+        "reason": "Recursive delete outside the workspace requires confirmation."
+      },
+      {
+        "id": "remote-ssh",
+        "reason": "SSH/SCP/RSYNC to a remote host requires confirmation."
+      },
+      {
+        "id": "eval-or-shell-c",
+        "reason": "eval / shell -c can hide a dangerous command. Confirm before continuing."
+      }
+    ]
+  }
+}
