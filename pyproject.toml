@@ -1,0 +1,8 @@
+[project]
+name = "homework-12"
+version = "0.1.0"
+description = "Eval av säkerhetsnätet från HW-06"
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6.0",
+]
